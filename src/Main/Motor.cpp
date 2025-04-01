@@ -1,28 +1,67 @@
 #include "Motor.h"
 
-IntervalTimer motorTimer;      // Hardware-Timer
-Motor* globalMotor = nullptr;  // Globale Motor-Instanz, Standard auf nullptr
+const int ticksPerRevolution = 2184;
 
-void motorTimerCallback() {
-  if (globalMotor) {
-    globalMotor->updateRPM();
-    globalMotor->updateControl();
-  }
+// Globale Wrapper-Instanzen
+Motor* Motor::instance0 = nullptr;
+Motor* Motor::instance1 = nullptr;
+
+// === Wrapper-ISRs ===
+void Motor::pwmISRWrapper0() {
+  if (instance0) instance0->pwmISR();
 }
-const int ticksPerRevolution = 2184;  // Korrigierte Encoder-Auflösung
-unsigned int long current_rpmTime = 0;
 
+void Motor::pwmISRWrapper1() {
+  if (instance1) instance1->pwmISR();
+}
+
+// === Konstruktor ===
 Motor::Motor(int in1, int in2, int encA, int encB)
-  : in1(in1), in2(in2), encoder(encA, encB), currentRPM(0), targetRPM(0), pwmValue(0), lastUpdateTime(0), lastPosition(0) {
+  : in1(in1), in2(in2), encoder(encA, encB), currentRPM(0), targetRPM(0),
+    lastUpdateTime(0), lastPosition(0), pwmDuty(0), direction(0), pwmTimer(nullptr) {
   pinMode(in1, OUTPUT);
   pinMode(in2, OUTPUT);
 }
 
-void Motor::updateRPM() {
-  unsigned long currentTime = micros();             // Nutze micros() für µs-Auflösung
-  float dt = (currentTime - lastUpdateTime) / 1e6;  // Zeit in Sekunden (10 µs = 0.00001 s)
+void Motor::attachTimer(IntervalTimer* t) {
+  pwmTimer = t;
+  if (!instance0) {
+    instance0 = this;
+    pwmTimer->begin(pwmISRWrapper0, 1000);
+    pwmTimer->end();
+  } else if (!instance1) {
+    instance1 = this;
+    pwmTimer->begin(pwmISRWrapper1, 1000);
+    pwmTimer->end();
+  }
+}
 
-  if (dt > 0.01) {  // Aktualisierung nur alle 10 µs
+void Motor::pwmISR() {
+  static bool pwmState = false;
+
+  if (pwmState) {
+    // Driving
+    if (direction > 0) {
+      digitalWrite(in1, HIGH);
+      digitalWrite(in2, LOW);
+    } else {
+      digitalWrite(in1, LOW);
+      digitalWrite(in2, HIGH);
+    }
+  } else {
+    // Braking
+    digitalWrite(in1, HIGH);
+    digitalWrite(in2, HIGH);
+  }
+
+  pwmState = !pwmState;
+}
+
+void Motor::updateRPM() {
+  unsigned long currentTime = micros();
+  float dt = (currentTime - lastUpdateTime) / 1e6;
+
+  if (dt > 0.01) {
     int currentPosition = encoder.read();
     int deltaTicks = currentPosition - lastPosition;
     int ticksPerSecond = deltaTicks / dt;
@@ -33,72 +72,61 @@ void Motor::updateRPM() {
   }
 }
 
+void Motor::setTargetRPM(float rpm) {
+  targetRPM = rpm;
+}
 
 float Motor::getRPM() {
   return currentRPM;
 }
 
-void Motor::setTargetRPM(float rpm) {
-  targetRPM = rpm;
+int Motor::getEncoderPosition() {
+  return encoder.read();
+}
+
+int Motor::getDirection() {
+  return direction;
 }
 
 void Motor::updateControl() {
-  static float integral = 0;   // Integrationsspeicher
-  static float lastError = 0;  // Vorheriger Fehler für Differenzialanteil
+  static float integral = 0;
+  static float lastError = 0;
 
-  float error = targetRPM - currentRPM;  // Fehler berechnen
-
-  // Angepasste PID-Werte
-  float Kp = 0.0825;  // Niedrigere Verstärkung für sanftere Regelung
-  float Ki = 0.0853;  // Langsamerer Integralaufbau
-  float Kd = 0.0;     // Leichte Dämpfung
+  float error = targetRPM - currentRPM;
+  float Kp = 0.0825;
+  float Ki = 0.0853;
+  float Kd = 0.0;
 
   integral += error;
-  integral = constrain(integral, -3000, 3000);  // Begrenzung des Integrals
-
-  float derivative = (error - lastError) / 0.01;  // Annäherung für Dämpfung
+  integral = constrain(integral, -3000, 3000);
+  float derivative = (error - lastError) / 0.01;
   lastError = error;
 
-  float u_debug = Kp * error + Ki * integral;
+  float controlSignal = Kp * error + Ki * integral + Kd * derivative;
+  float absSignal = abs(controlSignal);
 
-  int pwmOutput = constrain(Kp * error + Ki * integral + Kd * derivative, -255, 255);  // Begrenzung auf gültigen PWM-Bereich
+  int newDir = 0;
+  if (targetRPM > 1.0) newDir = 1;
+  else if (targetRPM < -1.0) newDir = -1;
 
-  // // PWM-Wert setzen
-  // analogWrite(in1, pwmOutput);
-  // digitalWrite(in2, LOW);  // Vorwärts fahren
-
-  if(targetRPM==0){
-    digitalWrite(in1,HIGH);
-    digitalWrite(in2,HIGH);
-  }
-  //Vorwärts
-  if (targetRPM >= 0) {
+  if (abs(targetRPM) < 1.0) {
+    if (pwmTimer) pwmTimer->end();
     digitalWrite(in1, HIGH);
-    analogWrite(in2, 255 - pwmOutput);
-  }
-  //Rückwärts
-  else if (targetRPM < 0) {
     digitalWrite(in2, HIGH);
-    analogWrite(in1, 255 - abs(pwmOutput));
+    integral = 0;
+    direction = 0;
+    return;
   }
 
-  // Debugging
-  Serial.print("Ziel: ");
-  Serial.print(targetRPM);
-  Serial.print(" RPM | Ist: ");
-  Serial.print(currentRPM);
-  Serial.print(" RPM | Fehler: ");
-  Serial.print(error);
-  Serial.print(" | Integral: ");
-  Serial.print(integral);
-  Serial.print(" | PWM: ");
-  Serial.print(pwmOutput);
-  Serial.print(" | Ki * Integral: ");
-  Serial.println(Ki * integral);
-  Serial.print(" | u: ");
-  Serial.println(u_debug);
-}
+  direction = newDir;
+  pwmDuty = constrain(absSignal, 10, 245);
 
-int Motor::getEncoderPosition() {
-  return encoder.read();
+  float pwmFreq = 10000.0;
+  float period_us = 1e6 / pwmFreq;
+  float onTime = period_us * (pwmDuty / 255.0);
+
+  if (pwmTimer) {
+    if (this == instance0) pwmTimer->begin(pwmISRWrapper0, onTime);
+    else if (this == instance1) pwmTimer->begin(pwmISRWrapper1, onTime);
+  }
 }

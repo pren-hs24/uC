@@ -1,46 +1,82 @@
 #include "Motor.h"
-#include "UART.h"
 
-#define IN1 3  //Pin for IN1 on H-Bridge1
-#define IN2 4  //Pin for IN2 on H-Bridge1
+// Pinbelegung linker Motor
+#define IN1_LEFT 3
+#define IN2_LEFT 4
+#define ENC_A_LEFT 10
+#define ENC_B_LEFT 11
 
-#define PHASEA 10  //Phase A of encoder 1
-#define PHASEB 11  //Phase B of encoder 1
+// Pinbelegung rechter Motor
+#define IN1_RIGHT 5
+#define IN2_RIGHT 6
+#define ENC_A_RIGHT 12
+#define ENC_B_RIGHT 13
 
-#define MAX_RPM 240
+// Motorobjekte
+Motor motorLeft(IN1_LEFT, IN2_LEFT, ENC_A_LEFT, ENC_B_LEFT);
+Motor motorRight(IN1_RIGHT, IN2_RIGHT, ENC_A_RIGHT, ENC_B_RIGHT);
 
-Motor motor(IN1, IN2, PHASEA, PHASEB);  // Pins für Motorsteuerung und Encoder
+// Timer
+IntervalTimer pwmTimerLeft;
+IntervalTimer pwmTimerRight;
+IntervalTimer controlTimer;
 
-int8_t last_speed = 0;
+// Regel-Callback (100 Hz)
+void controlCallback() {
+  motorLeft.updateRPM();
+  motorLeft.updateControl();
+
+  motorRight.updateRPM();
+  motorRight.updateControl();
+
+  // Serielle Ausgabe (optional)
+  Serial.print("L: ");
+  Serial.print(motorLeft.getRPM());
+  Serial.print(" RPM | R: ");
+  Serial.print(motorRight.getRPM());
+  Serial.println(" RPM");
+}
 
 void setup() {
-  UART_Init();
+  Serial.begin(115200);
+  delay(500);
+  Serial.println("Starte zwei-Motoren-Test...");
 
-  globalMotor = &motor;  // Motor-Instanz für den Timer setzen
+  // Timer zuweisen
+  motorLeft.attachTimer(&pwmTimerLeft);
+  motorRight.attachTimer(&pwmTimerRight);
 
-  // Starte den Timer mit einer Abtastzeit von 10ms (100 Hz)
-  motorTimer.begin(motorTimerCallback, 10000);  // 10000 Mikrosekunden = 10 ms
+  // Regel-Timer starten (10ms = 100 Hz)
+  controlTimer.begin(controlCallback, 10000);
 }
 
 void loop() {
-  UART_Receive();
-  int8_t current_speed = UART_GetSpeed();
+  // === 1. Geradeausfahrt ===
+  Serial.println("Beide Motoren: Vorwärts 100 RPM");
+  motorLeft.setTargetRPM(100);
+  motorRight.setTargetRPM(-100);
+  delay(5000);
 
-  if (current_speed != last_speed) {
-    last_speed = current_speed;
-    float rpm = MAX_RPM * (current_speed / 100.0);
-    Serial.print("Setze rpm: ");
-    Serial.println(rpm);
-    motor.setTargetRPM(rpm);
+  // === 2. Stopp ===
+  Serial.println("Stop");
+  motorLeft.setTargetRPM(0);
+  motorRight.setTargetRPM(0);
+  delay(3000);
 
-    // Nachricht mit Text + Speed-Wert senden
-    uint8_t payload[20];  // Array für Nachricht + Speed
-    const char *msg = "RPM Motor set to: ";
-    size_t msgLen = strlen(msg);
+  // === 3. Linkskurve (nur rechter Motor läuft) ===
+  Serial.println("Kurve: nur rechter Motor");
+  motorLeft.setTargetRPM(0);
+  motorRight.setTargetRPM(-100);
+  delay(3000);
 
-    memcpy(payload, msg, msgLen);    // Text kopieren
-    payload[msgLen] = rpm;  // Speed-Wert anhängen
+  // === 4. Rückwärtsfahrt ===
+  Serial.println("Beide Motoren: Rückwärts -80 RPM");
+  motorLeft.setTargetRPM(-80);
+  motorRight.setTargetRPM(80);
+  delay(5000);
 
-    UART_SendEvent(EVT_LOG_MESSAGE, payload, msgLen + 1);
-  }
+  // === 5. Stopp ===
+  motorLeft.setTargetRPM(0);
+  motorRight.setTargetRPM(0);
+  delay(3000);
 }
