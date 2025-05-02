@@ -14,13 +14,22 @@ TOF::TOF(uint16_t addr, uint8_t xshut)
 bool TOF::setAddress() {
   digitalWrite(xshut, HIGH);
   delay(100);
+  
+  // uint8_t status = VL53L3CX_ULP_WaitForBoot(std_addr);
 
-  Wire2.beginTransmission(0x29);
-  uint8_t error = Wire2.endTransmission();
-  if (error != 0) {
-    Serial.println("Sensor antwortet nicht auf 0x29 nach XSHUT HIGH!");
-    return false;
-  }
+  // if(status != VL53L3CX_ULP_ERROR_NONE){
+  //   Serial.println("Fehler nach wait for boot");
+  //   Serial.print("Boot state bei Fehler: ");
+  //   Serial.println(status, HEX);
+  //   return false;
+  // }
+
+  // Wire2.beginTransmission((int)std_addr);
+  // uint8_t error = Wire2.endTransmission();
+  // if (error != 0) {
+  //   Serial.println("Sensor antwortet nicht auf 0x29 nach XSHUT HIGH!");
+  //   return false;
+  // }
 
   if (VL53L3CX_ULP_SetI2CAddress(std_addr, (uint8_t)addr) != VL53L3CX_ULP_ERROR_NONE) {
     return false;
@@ -28,7 +37,7 @@ bool TOF::setAddress() {
   Serial.print("I2C gesetzt auf ");
   Serial.println(addr, HEX);
 
-  delay(20);  // neue Pause nach Adressänderung
+  //delay(10);  // neue Pause nach Adressänderung
   return true;
 }
 
@@ -38,12 +47,12 @@ bool TOF::init() {
   //   Serial.println("Fehler nach wait for boot");
   //   return false;
   // }
-  Wire2.beginTransmission(0x30);
-  uint8_t error = Wire2.endTransmission();
-  if (error != 0) {
-    Serial.println("Sensor antwortet nicht auf neue Addresse nach wechsel!");
-    return false;
-  }
+  // Wire2.beginTransmission((int)addr);
+  // uint8_t error = Wire2.endTransmission();
+  // if (error != 0) {
+  //   Serial.println("Sensor antwortet nicht auf neue Addresse nach wechsel!");
+  //   return false;
+  // }
   if (VL53L3CX_ULP_SensorInit(addr) != VL53L3CX_ULP_ERROR_NONE) {
     Serial.println("Init failed");
     return false;
