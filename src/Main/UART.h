@@ -1,10 +1,13 @@
+#pragma once
 #ifndef UART_H
 #define UART_H
 
 #include <Arduino.h>
 
+
 // UART Einstellungen
 #define UART_BAUDRATE 115200
+#define DEBUGG_LED 13
 
 // Enum für Command-Codes (Raspberry Pi → Teensy)
 enum CommandCode : uint8_t {
