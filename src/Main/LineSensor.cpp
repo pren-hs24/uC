@@ -2,9 +2,12 @@
 #include <Arduino.h>
 #define BUZZER_PIN 7  // PWM-fähiger Piezoanschluss am Teensy
 
-void LineSensor::begin() {
+void LineSensor::begin(const uint8_t* pins, uint8_t numSensors) {
+  sensorCount = numSensors;
+
   qtr.setTypeRC();
-  qtr.setSensorPins((const uint8_t[]){14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}, NUM_SENSORS);
+  qtr.setSensorPins(pins, numSensors);
+ 
   qtr.setTimeout(2500);
   delay(500);
   
@@ -15,14 +18,14 @@ void LineSensor::begin() {
   while (millis() - start < 10000) {
     qtr.calibrate();
     qtr.readCalibrated(sensorValues);
-    for (uint8_t i = 0; i < NUM_SENSORS; i++) {
+    for (uint8_t i = 0; i < numSensors; i++) {
     Serial.print(sensorValues[i]);
     Serial.print('\t');  // Tab als Trennung
     }
     Serial.println();
     delay(10);
   }
-  for (uint8_t i = 0; i < NUM_SENSORS; i++) {
+  for (uint8_t i = 0; i < numSensors; i++) {
   Serial.print(sensorValues[i]);
   Serial.print('\t');  // Tab als Trennung
   }
@@ -35,36 +38,52 @@ void LineSensor::begin() {
 
 }
 
+
+
 uint16_t LineSensor::readPosition() {
+  
   qtr.readCalibrated(sensorValues);
   return qtr.readLineWhite(sensorValues);
+ 
 }
 
 bool LineSensor::isOnLine() {
   qtr.readCalibrated(sensorValues);
+  uint8_t activeCount = 0;
 
-  for (uint8_t i = 0; i < NUM_SENSORS; i++) {
-    if (sensorValues[i] < 600) {
-      // Mindestens ein Sensor sieht die Linie
-      return true;
+  for (uint8_t i = 0; i < sensorCount; i++) {
+    if (sensorValues[i] < 200) {
+      activeCount++;
+      if (activeCount >= 2) {
+        return true;  // Mindestens zwei Sensoren erkennen die Linie
+      }
     }
   }
 
-  // Kein Sensor sieht die Linie
-  return false;
+  return false;  // Weniger als zwei Sensoren aktiv → keine Linie
 }
 
-
-bool LineSensor::onPoint() {
+bool LineSensor::isOnLine1() {
   qtr.readCalibrated(sensorValues);
 
-  for (uint8_t i = 0; i < NUM_SENSORS; i++) {
-    if (sensorValues[i] > 500) {
-      // Mindestens ein Sensor sieht nicht weiß
-      return false;
+  uint8_t overThreshold = 0;
+for (uint8_t i = 0; i < sensorCount; i++) {
+  if (sensorValues[i] > 600) {
+    overThreshold++;
+  }
+}
+return overThreshold >= 5;  // true, wenn ALLE drüber sind
+}
+
+bool LineSensor::onPoint() {
+  
+   qtr.readCalibrated(sensorValues);
+
+  for (uint8_t i = 0; i < sensorCount; i++) {
+    if (sensorValues[i] > 200) {
+      return false;  // Nicht alle Sensoren sehen Weiß
     }
   }
 
-  // Alle Sensoren sehen weiß
-  return true;
+  return true;  // Alle Sensoren sehen Weiß
 }

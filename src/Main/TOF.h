@@ -1,3 +1,4 @@
+#pragma once
 #include <Arduino.h>
 #include "VL53L3CX_ULP_api.h"
 #include "VL53L3CX_ULP_platform.h"

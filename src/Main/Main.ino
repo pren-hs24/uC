@@ -1,32 +1,30 @@
 #include "FahrBefehle.h"
 #include <Arduino.h>
-#include "Servo.h"
 #include <Wire.h>
 #include "TOF.h"
-
-
-unsigned long lastUpdate = 0;
+#include "Servo.h"
+#include "LineSensor.h"
 
 ServoMotor myServo(2);
 
+//I2C BUS
+#define Wire_Bus Wire2
+// #define I2C_addr_1 0x30
+// #define I2C_addr_2 0x31
+#define XSHUT_2 38
+#define XSHUT_3 39
 
- bool delayNonBlocking(unsigned long dauer) {
-  static unsigned long startzeit = 0;
-  static bool läuft = false;
+const uint16_t addr_1 = 0x30;
+const uint16_t addr_2 = 0x31;
 
-  if (!läuft) {
-    startzeit = millis();
-    läuft = true;
-    return false;
-  }
+TOF tofFront(addr_1, XSHUT_2);
+TOF tofBack(addr_2, XSHUT_3);
 
-  if (millis() - startzeit >= dauer) {
-    läuft = false; // zurücksetzen für nächsten Aufruf
-    return true;
-  }
+LineSensor frontSensor;
+LineSensor backSensor;
+const uint8_t frontPins[] = {15, 17, 19, 21, 23};
+const uint8_t backPins[] = {14, 16, 18, 20, 22};  
 
-  return false;
-}
 
 // Timer
 IntervalTimer pwmTimerLeft;
@@ -58,8 +56,10 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Starte serielle kommunikation");
 
-  // Liniensensor
-  lineSensor.begin();
+  //Liniensensor
+  frontSensor.begin(frontPins, 5);
+  backSensor.begin(backPins, 5);  
+  
 
   //Servomotor
   myServo.begin();
@@ -72,23 +72,54 @@ void setup() {
  controlTimer.begin(controlCallback, 10000);
 
 
+  //I2C
+ // put your setup code here, to run once:
+  Serial.begin(115200);
+  Serial.println("Starte serielle kommunikation");
+
+  Wire_Bus.begin();
+  Wire_Bus.setClock(100000);
+
+  Serial.println("VL53L3CX Initialisierung...");
+
+  if (!tofFront.setAddress()) {
+    Serial.println("Fehler bei setzen der Addresse von ToF front");
+  } else {
+    Serial.println("Tof front Addresse erfolgreich gesetzt");
+  }
+
+  if (!tofBack.setAddress()) {
+    Serial.println("Fehler bei setzen der Addresse von ToF back");
+  } else {
+    Serial.println("Tof back Addresse erfolgreich gesetzt");
+  }
+
+  if (!tofFront.init()) {
+    Serial.println("Fehler in Init von ToF front");
+    while(1);
+  } else {
+    Serial.println("Tof front init erfolgreich");
+  }
+
+  if (!tofBack.init()) {
+    Serial.println("Fehler in Init von ToF back");
+  } else {
+    Serial.println("Tof back init erfolgreich");
+  }
+
+
+
+
 
 
 }
 
 
 void loop() {
-  
- followLine(40);
- 
 
+followLine(70, tofFront, tofBack);
 
- 
-
-
-  
 }
-
 
 
 

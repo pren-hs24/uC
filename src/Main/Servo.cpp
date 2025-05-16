@@ -1,4 +1,4 @@
-#include "servo.h"
+#include "Servo.h"
 #include <Arduino.h>
 
 ServoMotor::ServoMotor(int pin) {
@@ -25,8 +25,10 @@ void ServoMotor::moveTo(int angle) {
 
 void ServoMotor::liftHindernis() {
   moveTo(_currentAngle + 30);
+  delay(2000);
 }
 
 void ServoMotor::dropHindernis() {
   moveTo(_currentAngle - 30);
+  delay(2000);
 }
