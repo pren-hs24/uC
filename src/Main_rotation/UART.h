@@ -45,21 +45,4 @@ void UART_SendEvent(EventCode eventCode, uint8_t *payload, size_t payloadLength)
 // Sendet das "Point Reached" Event
 void UART_SendPointReachedEvent();
 
-// Maximal erlaubte Payload-Länge
-#define UART_MAX_PAYLOAD 30
-
-// Struktur zur Speicherung des zuletzt empfangenen Kommandos
-struct UART_Command {
-    bool valid;                   // Wurde ein vollständiges Kommando empfangen?
-    CommandCode command;          // Kommando-Typ
-    uint8_t payload[UART_MAX_PAYLOAD];  // Payload-Daten
-    size_t payloadLength;         // Länge der Payload
-};
-
-// Zugriff auf das zuletzt empfangene Kommando
-const UART_Command* UART_GetLastCommand();
-
-// Reset, nachdem das Kommando verarbeitet wurde
-void UART_ClearLastCommand();
-
 #endif

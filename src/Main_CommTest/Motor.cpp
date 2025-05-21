@@ -17,8 +17,8 @@ void Motor::pwmISRWrapper1() {
 
 // === Konstruktor ===
 Motor::Motor(int in1, int in2, int encA, int encB)
-  : in1(in1), in2(in2), encoder(encA, encB), currentRPM(0), targetRPM(0),
-    lastUpdateTime(0), lastPosition(0), pwmDuty(0), direction(0), pwmTimer(nullptr) {
+  : in1(in1), in2(in2), encoder(encA, encB), currentRPM(0), targetRPM(0), integral(0), lastError(0),
+    lastUpdateTime(0), lastPosition(0), pwmState(false), timerActive(false), pwmDuty(0), direction(0), pwmTimer(nullptr) {
   pinMode(in1, OUTPUT);
   pinMode(in2, OUTPUT);
 }
@@ -37,7 +37,8 @@ void Motor::attachTimer(IntervalTimer* t) {
 }
 
 void Motor::pwmISR() {
-  static bool pwmState = false;
+  float pwmFreq = 1000.0;
+  float period_us = 1e6 / pwmFreq;
 
   if (pwmState) {
     // Driving
@@ -48,10 +49,14 @@ void Motor::pwmISR() {
       digitalWrite(in1, LOW);
       digitalWrite(in2, HIGH);
     }
+    float offTime = period_us * (1.0 - pwmDuty / 255.0);
+    pwmTimer->begin((this == instance0) ? pwmISRWrapper0 : pwmISRWrapper1, offTime);
   } else {
     // Braking
     digitalWrite(in1, HIGH);
     digitalWrite(in2, HIGH);
+    float onTime = period_us * (pwmDuty / 255.0);
+    pwmTimer->begin((this == instance0) ? pwmISRWrapper0 : pwmISRWrapper1, onTime);
   }
 
   pwmState = !pwmState;
@@ -61,15 +66,16 @@ void Motor::updateRPM() {
   unsigned long currentTime = micros();
   float dt = (currentTime - lastUpdateTime) / 1e6;
 
-  if (dt > 0.01) {
-    int currentPosition = encoder.read();
-    int deltaTicks = currentPosition - lastPosition;
-    int ticksPerSecond = deltaTicks / dt;
-    currentRPM = (ticksPerSecond / (float)ticksPerRevolution) * 60.0;
+  // if (dt > 0.01) {
+  int currentPosition = encoder.read();
+  int deltaTicks = currentPosition - lastPosition;
+  int ticksPerSecond = deltaTicks / dt;
+  currentRPM = (ticksPerSecond / (float)ticksPerRevolution) * 60.0;
+  lastPosition = currentPosition;
+  lastUpdateTime = currentTime;
 
-    lastPosition = currentPosition;
-    lastUpdateTime = currentTime;
-  }
+  // Serial.printf("dt: %f\n",dt);
+  // }
 }
 
 void Motor::setTargetRPM(float rpm) {
@@ -89,14 +95,23 @@ int Motor::getDirection() {
 }
 
 void Motor::updateControl() {
-  static float integral = 0;
-  static float lastError = 0;
-
   float error = targetRPM - currentRPM;
-  float Kp = 0.0825;
+  float Kp = 0.08;
   float Ki = 0.0853;
   float Kd = 0.0;
 
+  // === Motor AUS-Bedingung ===
+  if (abs(targetRPM) < 1.0) {
+    if (pwmTimer) pwmTimer->end();
+    timerActive = false;
+    digitalWrite(in1, HIGH);
+    digitalWrite(in2, HIGH);
+    integral = 0;
+    direction = 0;
+    return;
+  }
+
+  // === Regler aktiv ===
   integral += error;
   integral = constrain(integral, -3000, 3000);
   float derivative = (error - lastError) / 0.01;
@@ -105,28 +120,31 @@ void Motor::updateControl() {
   float controlSignal = Kp * error + Ki * integral + Kd * derivative;
   float absSignal = abs(controlSignal);
 
+  // Richtung setzen
   int newDir = 0;
   if (targetRPM > 1.0) newDir = 1;
   else if (targetRPM < -1.0) newDir = -1;
-
-  if (abs(targetRPM) < 1.0) {
-    if (pwmTimer) pwmTimer->end();
-    digitalWrite(in1, HIGH);
-    digitalWrite(in2, HIGH);
-    integral = 0;
-    direction = 0;
-    return;
-  }
-
   direction = newDir;
+
+  // PWM setzen
   pwmDuty = constrain(absSignal, 10, 245);
 
-  float pwmFreq = 10000.0;
-  float period_us = 1e6 / pwmFreq;
-  float onTime = period_us * (pwmDuty / 255.0);
-
-  if (pwmTimer) {
-    if (this == instance0) pwmTimer->begin(pwmISRWrapper0, onTime);
-    else if (this == instance1) pwmTimer->begin(pwmISRWrapper1, onTime);
+  // === Timer ggf. starten ===
+  if (!timerActive) {
+    float pwmFreq = 1000.0;
+    float period_us = 1e6 / pwmFreq;
+    float onTime = max(period_us * (pwmDuty / 255.0), 50.0);
+    pwmState = true;
+    pwmTimer->begin((this == instance0) ? pwmISRWrapper0 : pwmISRWrapper1, onTime);
+    timerActive = true;
   }
+
+  Serial.printf("targetRPM: %.2f | currentRPM: %.2f | pwmDuty: %d\n",
+                targetRPM, currentRPM, pwmDuty);
+  // if(this==instance0){
+  //   Serial.printf("rpm_L = %.2f\n",currentRPM);
+  // }
+  // else{
+  //   Serial.printf("rpm_R = %.2f\n",currentRPM);
+  // }
 }

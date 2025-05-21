@@ -27,8 +27,13 @@ class Motor {
     Encoder encoder;
     float currentRPM;
     float targetRPM;
+    float integral;
+    float lastError;
     unsigned long lastUpdateTime;
     int lastPosition;
+
+    bool pwmState;
+    bool timerActive;
 
     int direction;
     int pwmDuty;

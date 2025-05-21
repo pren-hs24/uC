@@ -2,8 +2,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <Arduino.h>
-
 // Pin-Zuweisungen-------------------------------
 
 //Motor links
@@ -15,8 +13,8 @@
 //Motor rechts
 #define IN1_R 5
 #define IN2_R 6
-#define PHASE_A_R 10
-#define PHASE_B_R 11
+#define PHASE_A_R 12
+#define PHASE_B_R 13
 
 //Servo
 #define SERVO 2
@@ -42,22 +40,6 @@
 // Konstanten------------------------------------
 #define MAX_SPEED 240
 #define DEFAULT_SPEED 80
-#define TURN_DIST 50
-#define PICK_DIST 20
-#define DET_DIST 3000
-
-enum Target : uint8_t {
-    TARGET_A = 0,
-    TARGET_B = 1,
-    TARGET_C = 2
-};
-
-const uint16_t addr_f_upper = 0x30;
-const uint16_t addr_f_lower = 0x31;
-const uint16_t addr_b = 0x32;
-
-const uint8_t frontPins[] = {15, 17, 19, 21, 23};
-const uint8_t backPins[] = {14, 16, 18, 20, 22};
 
 
 #endif

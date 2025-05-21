@@ -10,16 +10,19 @@
 // Externe Objekt-Deklarationen (einmal definiert, woanders benutzt)
 extern Motor motorLeft;
 extern Motor motorRight;
+extern TOF tof_front_upper;
+extern TOF tof_front_lower;
+extern TOF tof_back;
 extern LineSensor frontSensor;
 extern LineSensor backSensor;
 extern ServoMotor myServo;
 
 
 // Funktions-Deklarationen
-void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack);
-void followLineBackwards(float baseSpeed, TOF& tofFront, TOF& tofBack);
+void followLine(float baseSpeed);
+void followLineBackwards(float baseSpeed);
 void rotateUntilLine();
 void rotateUntilLine360();
-void ablaufHindernis(TOF& tofFront, TOF& tofBack);
+void ablaufHindernis();
 
 

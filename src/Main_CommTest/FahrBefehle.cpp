@@ -1,16 +1,15 @@
 #include "FahrBefehle.h"
 
 // Objekt-Definitionen (nur HIER!)
-Motor motorLeft(3, 4, 10, 11);
-Motor motorRight(5, 6, 12, 13);
+// Motor motorLeft(3, 4, 10, 11);
+// Motor motorRight(5, 6, 12, 13);
 
 int lastError = 0;        // bleibt zwischen den Aufrufen erhalten
 float integral = 0;
 
-void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack) {
+void followLine(float baseSpeed) {
 
   uint16_t distance_Back = 0;
-  
   const float Kp = 0.05;   // kleiner machen für sanfteres Reagieren
   const float Kd = 0.0;    // Dämpft schnelle Änderungen
   const float Ki = 0.0;    // erstmal auf 0 lassen
@@ -42,7 +41,7 @@ void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack) {
     delay(10000); 
   }
 
-  if (!tofBack.meassure(&distance_Back)) {
+  if (!tof_back.meassure(&distance_Back)) {
     Serial.println("Fehler in Messung TOF Front");
   }
 
@@ -52,13 +51,13 @@ void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack) {
     motorLeft.setTargetRPM(0);
     motorRight.setTargetRPM(0);
     delay(2000);
-    ablaufHindernis(tofFront, tofBack);
+    ablaufHindernis();
   }
 
   
 }
 
-void followLineBackwards(float baseSpeed, TOF& tofFront, TOF& tofBack) {
+void followLineBackwards(float baseSpeed) {
   const float Kp = 0.05;
   const float Kd = 0.0;
   const float Ki = 0.0;
@@ -88,7 +87,7 @@ void followLineBackwards(float baseSpeed, TOF& tofFront, TOF& tofBack) {
   motorLeft.setTargetRPM(leftSpeed);
   motorRight.setTargetRPM(-rightSpeed);
 
-  if (!tofFront.meassure(&distance_Back)) {
+  if (!tof_front_lower.meassure(&distance_Back)) {
     Serial.println("Fehler in Messung TOF Front");
   }
 
@@ -204,17 +203,17 @@ void rotateUntilLine360() {
 
 
 
-void ablaufHindernis(TOF& tofFront, TOF& tofBack){
+void ablaufHindernis(){
 
   rotateUntilLine();
-  followLineBackwards(15, tofFront, tofBack);
+  followLineBackwards(15);
   delay(2000);
   myServo.liftHindernis();
   delay(2000);
   rotateUntilLine();
   delay(2000);
   myServo.dropHindernis();
-  followLine(40, tofFront, tofBack);
+  followLine(40);
 
 
 }
