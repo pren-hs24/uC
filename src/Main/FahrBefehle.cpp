@@ -7,7 +7,7 @@
 int lastError = 0;        // bleibt zwischen den Aufrufen erhalten
 float integral = 0;
 
-void followLine(float baseSpeed) {
+void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack) {
 
   uint16_t distance_Back = 0;
   const float Kp = 0.05;   // kleiner machen für sanfteres Reagieren
@@ -41,7 +41,7 @@ void followLine(float baseSpeed) {
     delay(1000); 
   }
 
-  if (!tof_back.meassure(&distance_Back)) {
+  if (!tofBack.meassure(&distance_Back)) {
     Serial.println("Fehler in Messung TOF Front");
   }
 
@@ -51,13 +51,13 @@ void followLine(float baseSpeed) {
     motorLeft.setTargetRPM(0);
     motorRight.setTargetRPM(0);
     delay(2000);
-    ablaufHindernis();
+    ablaufHindernis(tofFront, tofBack);
   }
 
   
 }
 
-void followLineBackwards(float baseSpeed) {
+void followLineBackwards(float baseSpeed, TOF& tofFront, TOF& tofBack) {
   const float Kp = 0.05;
   const float Kd = 0.0;
   const float Ki = 0.0;
@@ -87,7 +87,7 @@ void followLineBackwards(float baseSpeed) {
   motorLeft.setTargetRPM(leftSpeed);
   motorRight.setTargetRPM(-rightSpeed);
 
-  if (!tof_front_lower.meassure(&distance_Back)) {
+  if (!tofFront.meassure(&distance_Back)) {
     Serial.println("Fehler in Messung TOF Front");
   }
 
@@ -203,17 +203,17 @@ void rotateUntilLine360() {
 
 
 
-void ablaufHindernis(){
+void ablaufHindernis(TOF& tofFront, TOF& tofBack){
 
   rotateUntilLine();
-  followLineBackwards(15);
+  followLineBackwards(15, tofFront, tofBack);
   delay(1000);
   myServo.liftHindernis();
   delay(1000);
   rotateUntilLine();
   delay(1000);
   myServo.dropHindernis();
-  followLine(40);
+  followLine(70, tofFront, tofBack);
 
 
 }

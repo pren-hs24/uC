@@ -14,6 +14,9 @@ ServoMotor myServo(2);
 #define XSHUT_2 38
 #define XSHUT_3 39
 
+Motor motorLeft(3, 4, 10, 11);
+Motor motorRight(5, 6, 12, 13);
+
 const uint16_t addr_1 = 0x30;
 const uint16_t addr_2 = 0x31;
 
