@@ -58,7 +58,7 @@ void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack) {
 }
 
 void followLineBackwards(float baseSpeed, TOF& tofFront, TOF& tofBack) {
-  const float Kp = 0.05;
+  const float Kp = 0.005;
   const float Kd = 0.0;
   const float Ki = 0.0;
   const int center = 2000;
@@ -96,7 +96,7 @@ void followLineBackwards(float baseSpeed, TOF& tofFront, TOF& tofBack) {
   if(distance_Back < 50){
     motorLeft.setTargetRPM(0);
     motorRight.setTargetRPM(0);
-    delay(2000);
+    delay(500);
     return;
   }
 
@@ -110,7 +110,7 @@ void rotateUntilLine() {
 
   motorLeft.setTargetRPM(0);
   motorRight.setTargetRPM(0);
-  delay(2000);
+  delay(500);
   Serial.println("Starte Drehung zur Liniensuche…");
 
   motorLeft.setTargetRPM(-20);
@@ -138,37 +138,6 @@ void rotateUntilLine() {
   delay(500);
 }
 
-void rotateUntilLineBack() {
-
-  motorLeft.setTargetRPM(0);
-  motorRight.setTargetRPM(0);
-  delay(2000);
-  Serial.println("Starte Drehung zur Liniensuche…");
-
-  motorLeft.setTargetRPM(-20);
-  motorRight.setTargetRPM(-20);
-  delay(2000);
-
-  while (true) {
-    uint16_t position = backSensor.readPosition();
-    //bool onLine = frontSensor.isOnLine();  // dein robuster Check
-    Serial.println(position);
-    Serial.println(backSensor.isOnLine());
-
-    if (backSensor.isOnLine() && position >= 1900 && position <= 2100) {
-      Serial.println("Linie wirklich zentriert erkannt!");
-      break;
-    }
-
-    
-
-    delay(10);
-  }
-
-  motorLeft.setTargetRPM(0);
-  motorRight.setTargetRPM(0);
-  delay(500);
-}
 
 void rotateUntilLine360() {
 
@@ -207,13 +176,13 @@ void ablaufHindernis(TOF& tofFront, TOF& tofBack){
 
   rotateUntilLine();
   followLineBackwards(15, tofFront, tofBack);
-  delay(1000);
+  delay(500);
   myServo.liftHindernis();
-  delay(1000);
+  delay(500);
   rotateUntilLine();
-  delay(1000);
+  delay(500);
   myServo.dropHindernis();
-  followLine(70, tofFront, tofBack);
+  followLine(40, tofFront, tofBack);
 
 
 }

@@ -107,7 +107,7 @@ void loop() {
           }
           break;
         case CMD_FOLLOW_LINE:
-          followLine();
+          followLine(40);
           break;
         case CMD_DEST_REACHED:
           destinationReached();

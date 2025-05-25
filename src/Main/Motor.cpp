@@ -18,7 +18,7 @@ void Motor::pwmISRWrapper1() {
 // === Konstruktor ===
 Motor::Motor(int in1, int in2, int encA, int encB)
   : in1(in1), in2(in2), encoder(encA, encB), currentRPM(0), targetRPM(0), integral(0), lastError(0),
-    lastUpdateTime(0), lastPosition(0), pwmState(false),timerActive(false), pwmDuty(0), direction(0), pwmTimer(nullptr) {
+    lastUpdateTime(0), lastPosition(0), pwmState(false), timerActive(false), pwmDuty(0), direction(0), pwmTimer(nullptr) {
   pinMode(in1, OUTPUT);
   pinMode(in2, OUTPUT);
 }
@@ -37,7 +37,7 @@ void Motor::attachTimer(IntervalTimer* t) {
 }
 
 void Motor::pwmISR() {
-  float pwmFreq = 10000.0;
+  float pwmFreq = 1000.0;
   float period_us = 1e6 / pwmFreq;
 
   if (pwmState) {
@@ -78,8 +78,17 @@ void Motor::updateRPM() {
 
 void Motor::setTargetRPM(float rpm) {
   targetRPM = rpm;
+
   if (!timerActive && abs(rpm) > 1.0f) {
-    pwmDuty = 128;  // Startwert falls noch nicht geregelt
+    direction = (rpm > 0) ? 1 : -1;
+
+    // 1. Encoderstand sofort auswerten
+    updateRPM();
+
+    // 2. Regelung sofort ausführen → setzt pwmDuty sinnvoll
+    updateControl();
+
+    // 3. PWM starten mit initial geregeltem Wert
     float pwmFreq = 10000.0;
     float period_us = 1e6 / pwmFreq;
     float onTime = period_us * (pwmDuty / 255.0);
@@ -107,16 +116,17 @@ void Motor::updateControl() {
   //static float lastError = 0;
 
   float error = targetRPM - currentRPM;
-  float Kp = 0.03;
-  float Ki = 0.0853;
+
+  float Kp = 0.101;
+  float Ki = 0.316;
   float Kd = 0.0;
 
   integral += error;
   integral = constrain(integral, -3000, 3000);
-  float derivative = (error - lastError) / 0.01;
+  //float derivative = (error - lastError) / 0.01;
   lastError = error;
 
-  float controlSignal = Kp * error + Ki * integral + Kd * derivative;
+  float controlSignal = Kp * error + Ki * integral;
   float absSignal = abs(controlSignal);
 
   int newDir = 0;
@@ -134,7 +144,7 @@ void Motor::updateControl() {
   }
 
   direction = newDir;
-  pwmDuty = constrain(absSignal, 10, 245);
+  pwmDuty = constrain(absSignal, 0, 245);
 
   // if(this==instance0){
   //   Serial.printf("rpm_L = %.2f\n",currentRPM);

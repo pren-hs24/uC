@@ -5,6 +5,7 @@
 #include "LineSensor.h"
 #include "Servo.h"
 #include "TOF.h"
+#include "driveStraight.h"
 
 
 // Externe Objekt-Deklarationen (einmal definiert, woanders benutzt)

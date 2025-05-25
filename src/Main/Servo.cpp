@@ -3,7 +3,7 @@
 
 ServoMotor::ServoMotor(int pin) {
   _pin = pin;
-  _currentAngle = 50;
+  _currentAngle = 5;
 }
 
 void ServoMotor::begin() {
@@ -24,11 +24,11 @@ void ServoMotor::moveTo(int angle) {
 }
 
 void ServoMotor::liftHindernis() {
-  moveTo(_currentAngle + 30);
+  moveTo(_currentAngle + 18);
   delay(2000);
 }
 
 void ServoMotor::dropHindernis() {
-  moveTo(_currentAngle - 30);
+  moveTo(_currentAngle - 18);
   delay(2000);
 }

@@ -55,6 +55,10 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
+
+  //Servomotor
+  myServo.begin();
+  
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("Starte serielle kommunikation");
@@ -120,45 +124,8 @@ void setup() {
 
 void loop() {
 
-followLine(70, tofFront, tofBack);
+followLine(50, tofFront, tofBack);
+
+delay(20);
 
 }
-
-
-
-
-
-
-/*
-   float baseSpeed =40.00;  // Grundgeschwindigkeit in RPM
-  const float Kp = 0.02;     // Verstärkung für Lenkung
-  const int center = 5000;   // Mitte der Linie
-
-
-  uint16_t position = lineSensor.readPosition();
-  //Serial.println(position);
-
-  int error = position - center;
-  float correction = Kp * error;
-  Serial.println(correction);
-  correction = constrain(correction, -30, 30);  // sanft halten
-  
-  float leftSpeed = baseSpeed + correction;
-  float rightSpeed = baseSpeed - correction;
-  //Serial.println(leftSpeed);
-  //Serial.println(rightSpeed);
-
-  motorLeft.setTargetRPM(-leftSpeed);
-  motorRight.setTargetRPM(rightSpeed);
- 
- 
-  // Regelung alle 10 ms
-  if (millis() - lastUpdate >= 10) {
-    motorLeft.updateRPM();
-    motorLeft.updateControl();
-    motorRight.updateRPM();
-    motorRight.updateControl();
-    lastUpdate = millis();
-  }
-*/
-

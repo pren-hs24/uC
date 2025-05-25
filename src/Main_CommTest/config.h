@@ -59,5 +59,16 @@ const uint16_t addr_b = 0x32;
 const uint8_t frontPins[] = {15, 17, 19, 21, 23};
 const uint8_t backPins[] = {14, 16, 18, 20, 22};
 
+const float TICKS_PER_ROTATION = 2148;
+const float WHEEL_DIAMETER = 94.2;     // mm
+const float TRACK_WIDTH = 275.0;       // mm
+const float WHEEL_CIRCUMFERENCE = PI * WHEEL_DIAMETER;
+
+const float KP_ANGLE = 0.0008;
+const float KP_SYNC  = 0.005;
+
+const float MAX_RPM = 25.0;
+const float MIN_RPM = 15.0;
+
 
 #endif

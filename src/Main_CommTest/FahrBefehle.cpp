@@ -38,7 +38,10 @@ void followLine(float baseSpeed) {
   if(frontSensor.onPoint()){
     motorLeft.setTargetRPM(0);
     motorRight.setTargetRPM(0);
-    delay(1000); 
+    delay(10);
+    driveStraight(500);
+    delay(10);
+    return;
   }
 
   if (!tof_back.meassure(&distance_Back)) {
@@ -67,38 +70,38 @@ void followLineBackwards(float baseSpeed) {
   
   while(true){
 
-  uint16_t position = backSensor.readPosition();
+    uint16_t position = backSensor.readPosition();
   
 
-  Serial.println(String("BackSensor Position (gespiegelt): ") + position);
+    Serial.println(String("BackSensor Position (gespiegelt): ") + position);
 
-  int error = position - center;
-  integral += error;
-  int derivative = error - lastError;
-  lastError = error;
+    int error = position - center;
+    integral += error;
+    int derivative = error - lastError;
+    lastError = error;
 
-  float correction = Kp * error + Kd * derivative + Ki * integral;
-  correction = constrain(correction, -30, 30);
+    float correction = Kp * error + Kd * derivative + Ki * integral;
+    correction = constrain(correction, -30, 30);
 
-  float leftSpeed = baseSpeed + correction;
-  float rightSpeed = baseSpeed - correction;
+    float leftSpeed = baseSpeed + correction;
+    float rightSpeed = baseSpeed - correction;
 
-  // Rückwärtsfahrt → Geschwindigkeiten negativ setzen
-  motorLeft.setTargetRPM(leftSpeed);
-  motorRight.setTargetRPM(-rightSpeed);
+    // Rückwärtsfahrt → Geschwindigkeiten negativ setzen
+    motorLeft.setTargetRPM(leftSpeed);
+    motorRight.setTargetRPM(-rightSpeed);
 
-  if (!tof_front_lower.meassure(&distance_Back)) {
+    if (!tof_front_lower.meassure(&distance_Back)) {
     Serial.println("Fehler in Messung TOF Front");
-  }
+    }
 
-  Serial.println(distance_Back);
+    Serial.println(distance_Back);
 
-  if(distance_Back < 50){
-    motorLeft.setTargetRPM(0);
-    motorRight.setTargetRPM(0);
-    delay(2000);
-    return;
-  }
+    if(distance_Back < 50){
+      motorLeft.setTargetRPM(0);
+      motorRight.setTargetRPM(0);
+      delay(2000);
+      return;
+    }
 
 
   }
@@ -211,6 +214,8 @@ void ablaufHindernis(){
   myServo.liftHindernis();
   delay(1000);
   rotateUntilLine();
+  delay(1000);
+  driveStraight(1000);
   delay(1000);
   myServo.dropHindernis();
   followLine(40);

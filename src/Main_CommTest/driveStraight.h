@@ -3,4 +3,6 @@
 #include "Motor.h"
 #include "FahrBefehle.h"
 
-void Turn_UFO(float targetAngle);
+
+
+void driveStraight(float distance_mm);
