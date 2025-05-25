@@ -25,14 +25,20 @@ TOF tofBack(addr_2, XSHUT_3);
 
 LineSensor frontSensor;
 LineSensor backSensor;
-const uint8_t frontPins[] = {15, 17, 19, 21, 23};
-const uint8_t backPins[] = {14, 16, 18, 20, 22};  
+const uint8_t frontPins[] = { 15, 17, 19, 21, 23 };
+const uint8_t backPins[] = { 14, 16, 18, 20, 22 };
 
 
 // Timer
 IntervalTimer pwmTimerLeft;
 IntervalTimer pwmTimerRight;
 IntervalTimer controlTimer;
+IntervalTimer rpmCallback;
+
+// void callbackRPM(){
+//   motorLeft.updateRPM();
+//   motorRight.updateRPM();
+// }
 
 // Regel-Callback (100 Hz)
 void controlCallback() {
@@ -41,7 +47,7 @@ void controlCallback() {
 
   motorRight.updateRPM();
   motorRight.updateControl();
-/*
+  /*
   // Serielle Ausgabe (optional)
   Serial.print("L: ");
   Serial.print(motorLeft.getRPM());
@@ -58,15 +64,15 @@ void setup() {
 
   //Servomotor
   myServo.begin();
-  
+
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("Starte serielle kommunikation");
 
   //Liniensensor
   frontSensor.begin(frontPins, 5);
-  backSensor.begin(backPins, 5);  
-  
+  backSensor.begin(backPins, 5);
+
 
   //Servomotor
   myServo.begin();
@@ -76,11 +82,12 @@ void setup() {
   motorRight.attachTimer(&pwmTimerRight);
 
   // Regel-Timer starten (10ms = 100 Hz)
- controlTimer.begin(controlCallback, 10000);
+  //controlTimer.begin(callbackRPM,1000);
+  controlTimer.begin(controlCallback, 10000);
 
 
   //I2C
- // put your setup code here, to run once:
+  // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("Starte serielle kommunikation");
 
@@ -103,7 +110,8 @@ void setup() {
 
   if (!tofFront.init()) {
     Serial.println("Fehler in Init von ToF front");
-    while(1);
+    while (1)
+      ;
   } else {
     Serial.println("Tof front init erfolgreich");
   }
@@ -115,17 +123,16 @@ void setup() {
   }
 
 
-
-
-
-
+  // for (int speed = 10; speed <= 50; speed+=10) {
+  //   followLine((float)speed, tofFront, tofBack);
+  //   delay(20);
+  // }
 }
 
 
 void loop() {
 
-followLine(50, tofFront, tofBack);
+  followLine(30, tofFront, tofBack);
 
-delay(20);
-
+  delay(15);
 }

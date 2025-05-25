@@ -10,7 +10,7 @@ float integral = 0;
 void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack) {
 
   uint16_t distance_Back = 0;
-  const float Kp = 0.05;   // kleiner machen für sanfteres Reagieren
+  const float Kp = 0.005;   // kleiner machen für sanfteres Reagieren
   const float Kd = 0.0;    // Dämpft schnelle Änderungen
   const float Ki = 0.0;    // erstmal auf 0 lassen
   const int center = 2000;
@@ -28,17 +28,18 @@ void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack) {
   float leftSpeed = baseSpeed + correction;
   float rightSpeed = baseSpeed - correction;
 
+    if(frontSensor.onPoint()){
+    motorLeft.setTargetRPM(0);
+    motorRight.setTargetRPM(0);
+    delay(1000); 
+    return;
+  }
+
   motorLeft.setTargetRPM(-leftSpeed);
   motorRight.setTargetRPM(rightSpeed);
   
   if(frontSensor.isOnLine1()){
    rotateUntilLine360(); 
-  }
-
-  if(frontSensor.onPoint()){
-    motorLeft.setTargetRPM(0);
-    motorRight.setTargetRPM(0);
-    delay(1000); 
   }
 
   if (!tofBack.meassure(&distance_Back)) {
@@ -58,7 +59,7 @@ void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack) {
 }
 
 void followLineBackwards(float baseSpeed, TOF& tofFront, TOF& tofBack) {
-  const float Kp = 0.005;
+  const float Kp = 0.0025;
   const float Kd = 0.0;
   const float Ki = 0.0;
   const int center = 2000;
