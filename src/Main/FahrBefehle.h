@@ -5,6 +5,8 @@
 #include "LineSensor.h"
 #include "Servo.h"
 #include "TOF.h"
+#include "driveStraight.h"
+#include "Endschalter.h"
 
 
 // Externe Objekt-Deklarationen (einmal definiert, woanders benutzt)
@@ -16,13 +18,14 @@ extern TOF tof_back;
 extern LineSensor frontSensor;
 extern LineSensor backSensor;
 extern ServoMotor myServo;
+extern Endschalter endschalter;
 
 
 // Funktions-Deklarationen
-void followLine(float baseSpeed, TOF& tofFront, TOF& tofBack);
-void followLineBackwards(float baseSpeed, TOF& tofFront, TOF& tofBack);
+void followLine(float baseSpeed, TOF& tof_front_lower, TOF& tof_back);
+void followLineBackwards(float baseSpeed, TOF& tof_front_lower, TOF& tof_back);
 void rotateUntilLine();
 void rotateUntilLine360();
-void ablaufHindernis(TOF& tofFront, TOF& tofBack);
+void ablaufHindernis(TOF& tof_front_lower, TOF& tof_back);
 
 

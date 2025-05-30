@@ -39,7 +39,7 @@ void followLine(float baseSpeed) {
     motorLeft.setTargetRPM(0);
     motorRight.setTargetRPM(0);
     delay(10);
-    driveStraight(500);
+    driveStraight(60);
     delay(10);
     return;
   }
@@ -215,7 +215,7 @@ void ablaufHindernis(){
   delay(1000);
   rotateUntilLine();
   delay(1000);
-  driveStraight(1000);
+  driveStraight(200);
   delay(1000);
   myServo.dropHindernis();
   followLine(40);

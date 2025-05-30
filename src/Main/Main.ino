@@ -4,6 +4,8 @@
 #include "TOF.h"
 #include "Servo.h"
 #include "LineSensor.h"
+#include "config.h"
+#include "Endschalter.h"
 
 ServoMotor myServo(2);
 
@@ -14,19 +16,22 @@ ServoMotor myServo(2);
 #define XSHUT_2 38
 #define XSHUT_3 39
 
+Endschalter endschalter(ENDSCHALTER_PIN);
+
 Motor motorLeft(3, 4, 10, 11);
 Motor motorRight(5, 6, 12, 13);
 
 const uint16_t addr_1 = 0x30;
 const uint16_t addr_2 = 0x31;
 
-TOF tofFront(addr_1, XSHUT_2);
-TOF tofBack(addr_2, XSHUT_3);
+//ToF Sensoren instanzieren
+TOF tof_front_upper(INT_TOF_1, XSHUT_TOF_1);
+TOF tof_front_lower(INT_TOF_2, XSHUT_TOF_2);
+TOF tof_back(INT_TOF_3, XSHUT_TOF_3);
 
 LineSensor frontSensor;
 LineSensor backSensor;
-const uint8_t frontPins[] = { 15, 17, 19, 21, 23 };
-const uint8_t backPins[] = { 14, 16, 18, 20, 22 };
+
 
 
 // Timer
@@ -61,6 +66,8 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
+  //Endschalter
+  endschalter.begin();
 
   //Servomotor
   myServo.begin();
@@ -96,33 +103,15 @@ void setup() {
 
   Serial.println("VL53L3CX Initialisierung...");
 
-  if (!tofFront.setAddress()) {
-    Serial.println("Fehler bei setzen der Addresse von ToF front");
-  } else {
-    Serial.println("Tof front Addresse erfolgreich gesetzt");
-  }
+  tof_front_upper.setAddress();
+  tof_front_lower.setAddress();
+  tof_back.setAddress();
 
-  if (!tofBack.setAddress()) {
-    Serial.println("Fehler bei setzen der Addresse von ToF back");
-  } else {
-    Serial.println("Tof back Addresse erfolgreich gesetzt");
-  }
-
-  if (!tofFront.init()) {
-    Serial.println("Fehler in Init von ToF front");
-    while (1)
-      ;
-  } else {
-    Serial.println("Tof front init erfolgreich");
-  }
-
-  if (!tofBack.init()) {
-    Serial.println("Fehler in Init von ToF back");
-  } else {
-    Serial.println("Tof back init erfolgreich");
-  }
-
-
+  tof_front_upper.init();
+  tof_front_lower.init();
+  tof_back.init();
+ 
+  
   // for (int speed = 10; speed <= 50; speed+=10) {
   //   followLine((float)speed, tofFront, tofBack);
   //   delay(20);
@@ -131,8 +120,7 @@ void setup() {
 
 
 void loop() {
+ followLine(30, tof_front_lower, tof_back);
 
-  followLine(30, tofFront, tofBack);
 
-  delay(15);
 }
