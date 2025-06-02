@@ -1,0 +1,29 @@
+#pragma once
+#include <Arduino.h>
+#include <Wire.h>
+#include "Motor.h"
+#include "LineSensor.h"
+#include "Servo.h"
+#include "TOF.h"
+#include "driveStraight.h"
+
+
+// Externe Objekt-Deklarationen (einmal definiert, woanders benutzt)
+extern Motor motorLeft;
+extern Motor motorRight;
+extern TOF tof_front_upper;
+extern TOF tof_front_lower;
+extern TOF tof_back;
+extern LineSensor frontSensor;
+extern LineSensor backSensor;
+extern ServoMotor myServo;
+
+
+// Funktions-Deklarationen
+void followLine(float baseSpeed);
+void followLineBackwards(float baseSpeed);
+void rotateUntilLine();
+void rotateUntilLine360();
+void ablaufHindernis();
+
+
