@@ -42,6 +42,9 @@ void UART_Receive();
 // Sendet ein Event über UART (Serial1)
 void UART_SendEvent(EventCode eventCode, uint8_t *payload, size_t payloadLength);
 
+//Hilfsfunktion zum Versenden von Log messages
+void UART_LogMessage(const char* fmt, ...) 
+
 // Sendet das "Point Reached" Event
 void UART_SendPointReachedEvent();
 

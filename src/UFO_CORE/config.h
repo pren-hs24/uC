@@ -15,11 +15,15 @@
 //Motor rechts
 #define IN1_R 5
 #define IN2_R 6
-#define PHASE_A_R 10
-#define PHASE_B_R 11
+#define PHASE_A_R 12
+#define PHASE_B_R 13
+
+#define WIRE_BUS Wire2
 
 //Servo
 #define SERVO 2
+//Endschalter
+#define ENDSCHALTER_PIN 34
 // Buzzer
 #define BUZZER 7
 //Start Button
@@ -41,7 +45,7 @@
 
 // Konstanten------------------------------------
 #define MAX_SPEED 240
-#define DEFAULT_SPEED 80
+#define DEFAULT_SPEED 30
 #define TURN_DIST 50
 #define PICK_DIST 20
 #define DET_DIST 3000

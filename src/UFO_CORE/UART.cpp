@@ -51,6 +51,22 @@ void UART_SendEvent(EventCode eventCode, uint8_t *payload, size_t payloadLength)
   Serial1.write(message, payloadLength + 2);
 }
 
+void UART_LogMessage(const char* fmt, ...) {
+  char buffer[64];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buffer, sizeof(buffer), fmt, args);
+  va_end(args);
+
+  uint8_t len = strlen(buffer);
+  uint8_t payload[1 + len];
+  payload[0] = len;
+  memcpy(&payload[1], buffer, len);
+
+  UART_SendEvent(EVT_LOG_MESSAGE, payload, sizeof(payload));
+}
+
+
 
 // Sendet das "Point Reached" Event
 void UART_SendPointReachedEvent() {

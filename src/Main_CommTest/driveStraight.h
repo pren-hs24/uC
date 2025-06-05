@@ -6,3 +6,4 @@
 
 
 void driveStraight(float distance_mm);
+void driveStraight1(float distance_mm);

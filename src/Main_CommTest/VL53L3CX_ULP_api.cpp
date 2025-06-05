@@ -176,16 +176,10 @@ uint8_t VL53L3CX_ULP_SetI2CAddress(uint16_t dev, uint8_t new_address) {
   uint8_t status = VL53L3CX_ULP_ERROR_NONE;
 
   status |= VL53L3CX_ULP_WrByte(dev, VL53L3CX_ULP_I2C_SLAVE__DEVICE_ADDRESS,
-                                (uint8_t)(new_address >> 1));
+                                (uint8_t)(new_address));
 
   // Nach Adressschreiben kleines Stabilisieren
-  Wire2.endTransmission(true);  // sichere Stop-Bedingung
-  delay(10);
-
-  // Versuch eines Soft-Reset-Verhaltens
-  Wire2.beginTransmission(new_address);
-  Wire2.endTransmission();
-  delay(10);
+  delay(2);
 
   return status;
 }
@@ -567,17 +561,17 @@ uint8_t VL53L3CX_ULP_WaitForBoot(uint16_t dev) {
 
   do {
     if (VL53L3CX_ULP_RdByte(dev, 0x0006, &boot_state) != 0) {
-      return 1;  // Fehler beim Lesen
+      return boot_state;  // Fehler beim Lesen
     }
 
     if (start_time > 500) {  // 500ms Timeout
       //Serial.println("Timeout beim Warten auf Boot State!");
-      return 2;  // Timeout Fehler
+      return boot_state;  // Timeout Fehler
     }
 
     VL53L3CX_ULP_WaitMs(1);  // ganz kleine Pause zwischen den Versuchen
     start_time++;
-  } while (boot_state != 0x01);
+  } while (boot_state != 0xbc);
 
   return VL53L3CX_ULP_ERROR_NONE;  // Sensor ist bereit!
 }

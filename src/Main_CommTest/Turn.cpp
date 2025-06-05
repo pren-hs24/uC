@@ -7,6 +7,18 @@ void Turn_UFO(float targetAngle) {
   long encoderLeft = 0;
   long encoderRight = 0;
 
+  int direction = 0;  //initalisierung
+
+  float baseRPM = 0;
+  float rpmR=0;
+  float rpmL=0;
+
+  if (targetAngle > 0) {
+    direction = 1;
+  } else if (targetAngle < 0) {
+    direction = -1;
+  }
+
   encoderLeftStart = motorLeft.getEncoderPosition();
   encoderRightStart = motorRight.getEncoderPosition();
 
@@ -26,12 +38,21 @@ void Turn_UFO(float targetAngle) {
     float error_sync = (deltaL + deltaR);  // soll 0 sein
 
     // Regelausgang als RPM
-    float baseRPM = MIN_RPM + KP_ANGLE * error_angle;
+    float angleRPM = KP_ANGLE * error_angle;
     float correctionRPM = KP_SYNC * error_sync;
-
-    float rpmL = constrain(baseRPM - correctionRPM, -MAX_RPM, MAX_RPM);
-    float rpmR = constrain(-baseRPM - correctionRPM, -MAX_RPM, MAX_RPM);
-
+    if (direction == 1) {
+      baseRPM = MIN_RPM + angleRPM;
+      rpmL = constrain(baseRPM - correctionRPM, -MAX_RPM, MAX_RPM);
+      rpmR = constrain(-baseRPM - correctionRPM, -MAX_RPM, MAX_RPM);
+    } else if (direction == -1) {
+      baseRPM = angleRPM - MIN_RPM;
+      rpmL = constrain(baseRPM - correctionRPM, -MAX_RPM, MAX_RPM);
+      rpmR = constrain(-baseRPM - correctionRPM, -MAX_RPM, MAX_RPM);
+    }
+    else{
+      rpmL=0;
+      rpmR=0;
+    }
     motorLeft.setTargetRPM(rpmL);
     motorRight.setTargetRPM(-rpmR);
     // setTargetRPM_Left(rpmL);
@@ -39,7 +60,7 @@ void Turn_UFO(float targetAngle) {
 
     if (abs(error_angle) < 100) {  // Toleranz in Ticks
       motorLeft.setTargetRPM(0);
-      motorLeft.setTargetRPM(0);
+      motorRight.setTargetRPM(0);
       return;
     }
 

@@ -36,7 +36,7 @@ class Motor {
     bool timerActive;
 
     int direction;
-    int pwmDuty;
+    float pwmDuty;
     IntervalTimer* pwmTimer;
 
     static Motor* instance0;

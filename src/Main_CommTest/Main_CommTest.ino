@@ -5,7 +5,7 @@
 #include "FahrBefehle.h"
 #include "TOF.h"
 #include "Turn.h"
-#include  "Melody.h"
+#include "Melody.h"
 
 //Motoren und Encoder initalisieren
 Motor motorLeft(IN1_L, IN2_L, PHASE_A_L, PHASE_B_L);
@@ -23,6 +23,8 @@ TOF tof_back(addr_b, XSHUT_TOF_3);
 
 //Servo
 ServoMotor myServo(SERVO);
+//Endschalter
+Endschalter endschalter(ENDSCHALTER_PIN);
 //Liniensensoren
 LineSensor frontSensor;
 LineSensor backSensor;
@@ -51,12 +53,20 @@ void setup() {
 
   //Init Buzzer
   pinMode(BUZZER, OUTPUT);
+  //Endschalter
+  endschalter.begin();
+
+  //Servomotor
+  myServo.begin();
 
   UART_Init();
 
   motorLeft.attachTimer(&timerLeft);
   motorRight.attachTimer(&timerRight);
   timerMotors.begin(updateMotors, 10000);
+
+  WIRE_BUS.begin();
+  WIRE_BUS.setClock(100000);
 
   tof_front_upper.setAddress();
   tof_front_lower.setAddress();
@@ -67,7 +77,7 @@ void setup() {
   tof_back.init();
 
   frontSensor.begin(frontPins, 5);
-  backSensor.begin(backPins,5);
+  backSensor.begin(backPins, 5);
 
   //lineFollow_init(motorRight,motorLeft,tof_front_lower,tof_back);
 }
@@ -132,14 +142,20 @@ void loop() {
 
 //dummy funktion für Drehung
 void turn(int16_t angle, uint8_t snap) {
-  Serial.printf("Drehe UFO um %i Grad",angle);
+  Serial.printf("Drehe UFO um %i Grad", angle);
+  if(debug){
+    UART_LogMessage("Drehe UFO um %i Grad", angle)
+  }
   Turn_UFO((float)angle);
   uint8_t message[] = { 0 };
+  if(snap&&(!frontSensor.isOnLine())){
+    message[0]=1;
+  }
   UART_SendEvent(EVT_ALIGNED, message, sizeof(message));
 }
 //funktion für Linienverfolgung
 void follow() {
-  followLine(DEFAULT_SPEED);
+  while(!followLine(DEFAULT_SPEED)) delay(5);
   UART_SendEvent(EVT_POINT_REACHED, nullptr, 0);
 }
 //beinhaltet Logik, wenn Ziel erreicht wurde
@@ -154,8 +170,11 @@ void setDebugLogging(uint8_t enabled) {
 }
 //Setzt Rad drehzahl -> wird nur für Tests benötigt
 void setSpeed(int8_t speed) {
-  float calc_speed = ((float)speed/100)*MAX_SPEED;
-  Serial.printf("Setze RPM: %.2f\n",calc_speed);
+  float calc_speed = ((float)speed / 100) * MAX_SPEED;
+  Serial.printf("Setze RPM: %.2f\n", calc_speed);
+  if(debug){
+    UART_LogMessage("Setze RPM: %.2f\n", calc_speed);
+  }
   motorLeft.setTargetRPM(calc_speed);
   motorRight.setTargetRPM(-calc_speed);
 }

@@ -40,6 +40,8 @@ void Motor::pwmISR() {
   float pwmFreq = 1000.0;
   float period_us = 1e6 / pwmFreq;
 
+  if (!timerActive) return;
+
   if (pwmState) {
     // Driving
     if (direction > 0) {
@@ -49,14 +51,18 @@ void Motor::pwmISR() {
       digitalWrite(in1, LOW);
       digitalWrite(in2, HIGH);
     }
-    float offTime = period_us * (1.0 - pwmDuty / 255.0);
-    pwmTimer->begin((this == instance0) ? pwmISRWrapper0 : pwmISRWrapper1, offTime);
+    float onTime = period_us * (pwmDuty / 255.0);
+    if (timerActive) {
+      pwmTimer->begin((this == instance0) ? pwmISRWrapper0 : pwmISRWrapper1, onTime);
+    }
   } else {
     // Braking
     digitalWrite(in1, HIGH);
     digitalWrite(in2, HIGH);
-    float onTime = period_us * (pwmDuty / 255.0);
-    pwmTimer->begin((this == instance0) ? pwmISRWrapper0 : pwmISRWrapper1, onTime);
+    float offTime = period_us * (1.0 - pwmDuty / 255.0);
+    if (timerActive) {
+      pwmTimer->begin((this == instance0) ? pwmISRWrapper0 : pwmISRWrapper1, offTime);
+    }
   }
 
   pwmState = !pwmState;
@@ -73,14 +79,49 @@ void Motor::updateRPM() {
   currentRPM = (ticksPerSecond / (float)ticksPerRevolution) * 60.0;
   lastPosition = currentPosition;
   lastUpdateTime = currentTime;
-
-  // Serial.printf("dt: %f\n",dt);
   // }
 }
 
 void Motor::setTargetRPM(float rpm) {
   targetRPM = rpm;
+
+  // === Sofortiger Stopp bei Ziel 0 ===
+  if (abs(rpm) < 1.0) {
+    if (pwmTimer) pwmTimer->end();
+    timerActive = false;
+    digitalWrite(in1, HIGH);
+    digitalWrite(in2, HIGH);
+    integral = 0;
+    lastError = 0;
+    direction = 0;
+    pwmDuty = 0;
+    return;
+  }
+
+  // === Start aus Stillstand ===
+  if (!timerActive) {
+    direction = (rpm > 0) ? 1 : -1;
+
+    // RPM aktualisieren, aber wird ggf. ignoriert (siehe updateRPM())
+    updateRPM();
+
+    // Regler sauber zurücksetzen
+    integral = 0;
+    lastError = 0;
+
+    // Initial PWM aus updateControl()
+    updateControl();
+
+    float pwmFreq = 1000.0;
+    float period_us = 1e6 / pwmFreq;
+    float onTime = period_us * (pwmDuty / 255.0);
+
+    pwmState = true;
+    pwmTimer->begin((this == instance0) ? pwmISRWrapper0 : pwmISRWrapper1, onTime);
+    timerActive = true;
+  }
 }
+
 
 float Motor::getRPM() {
   return currentRPM;
@@ -95,14 +136,42 @@ int Motor::getDirection() {
 }
 
 void Motor::updateControl() {
+  //static float integral = 0;
+  //static float lastError = 0;
+
   float error = targetRPM - currentRPM;
-  float Kp = 0.08;
-  float Ki = 0.0853;
+
+  float Kp = 0.0267;
+  float Ki = 0.1935;
   float Kd = 0.0;
 
-  // === Motor AUS-Bedingung ===
+  // Anti-Windup: Integrator nur wenn RPM stabil
+  //bool integratorAllowed = abs(error) < 100.0 && (abs(currentRPM) > 2.0 || abs(error) > 20.0);
+
+  //if (integratorAllowed) {
+    integral += error;
+    integral = constrain(integral, -3000, 3000);
+  //}
+  //float derivative = (error - lastError) / 0.01;
+  lastError = error;
+
+  //   // Optional: Reset Integrator bei Überschwingen
+  // if ((currentRPM > targetRPM + 10) && (error < 0)) {
+  //   integral = 0;
+  // }
+
+  float Ki_dynamic = Ki;//(integratorAllowed) ? 0.0 : Ki;
+
+  float controlSignal = Kp * error + Ki_dynamic * integral;
+  float absSignal = abs(controlSignal);
+
+  int newDir = 0;
+  if (targetRPM > 1.0) newDir = 1;
+  else if (targetRPM < -1.0) newDir = -1;
+
   if (abs(targetRPM) < 1.0) {
     if (pwmTimer) pwmTimer->end();
+    pwmDuty = 0;
     timerActive = false;
     digitalWrite(in1, HIGH);
     digitalWrite(in2, HIGH);
@@ -111,36 +180,12 @@ void Motor::updateControl() {
     return;
   }
 
-  // === Regler aktiv ===
-  integral += error;
-  integral = constrain(integral, -3000, 3000);
-  float derivative = (error - lastError) / 0.01;
-  lastError = error;
-
-  float controlSignal = Kp * error + Ki * integral + Kd * derivative;
-  float absSignal = abs(controlSignal);
-
-  // Richtung setzen
-  int newDir = 0;
-  if (targetRPM > 1.0) newDir = 1;
-  else if (targetRPM < -1.0) newDir = -1;
   direction = newDir;
+  pwmDuty = constrain(absSignal, 0, 245);
 
-  // PWM setzen
-  pwmDuty = constrain(absSignal, 10, 245);
+  Serial.printf("Current RPM: %.2f | targetRPM: %.2f | pwmDuty: %.2f | integral: %.2f\n",
+                currentRPM,targetRPM,pwmDuty, integral);
 
-  // === Timer ggf. starten ===
-  if (!timerActive) {
-    float pwmFreq = 1000.0;
-    float period_us = 1e6 / pwmFreq;
-    float onTime = max(period_us * (pwmDuty / 255.0), 50.0);
-    pwmState = true;
-    pwmTimer->begin((this == instance0) ? pwmISRWrapper0 : pwmISRWrapper1, onTime);
-    timerActive = true;
-  }
-
-  Serial.printf("targetRPM: %.2f | currentRPM: %.2f | pwmDuty: %d\n",
-                targetRPM, currentRPM, pwmDuty);
   // if(this==instance0){
   //   Serial.printf("rpm_L = %.2f\n",currentRPM);
   // }

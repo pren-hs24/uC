@@ -15,7 +15,7 @@ void LineSensor::begin(const uint8_t* pins, uint8_t numSensors) {
 
  unsigned long start = millis();
 
-  while (millis() - start < 10000) {
+  while (millis() - start < 4000) {
     qtr.calibrate();
     qtr.readCalibrated(sensorValues);
     for (uint8_t i = 0; i < numSensors; i++) {
