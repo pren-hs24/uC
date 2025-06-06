@@ -268,6 +268,8 @@ void ablaufHindernis(){
   delay(500);
   myServo.dropHindernis();
   delay(500);
+  driveStraight(50);
+  delay(500);
   followLine(40);
 
 
