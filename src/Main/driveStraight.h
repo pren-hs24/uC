@@ -2,6 +2,10 @@
 #include "config.h"
 #include "Motor.h"
 #include "FahrBefehle.h"
+#include <Wire.h>
+#include "Motor.h"
+#include "LineSensor.h"
+#include "Endschalter.h"
 
 
 

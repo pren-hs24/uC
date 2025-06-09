@@ -52,6 +52,8 @@ void driveStraight1(float distance_mm) {
 
   float ticksPerMM = TICKS_PER_ROTATION / WHEEL_CIRCUMFERENCE;
   float targetTicks = distance_mm * ticksPerMM;
+  int lastError = 0;        // bleibt zwischen den Aufrufen erhalten
+  float integral = 0;
 
   while (true) {
     long deltaL = -(motorLeft.getEncoderPosition() - encoderLeftStart);
@@ -68,8 +70,27 @@ void driveStraight1(float distance_mm) {
     float rpmL = constrain(baseRPM - correctionRPM, -MAX_RPM, MAX_RPM);
     float rpmR = constrain(baseRPM + correctionRPM, -MAX_RPM, MAX_RPM);
 
-    motorLeft.setTargetRPM(-15);
-    motorRight.setTargetRPM(15);
+    const float baseSpeed = 15;
+    const float Kp = 0.03;  // Noch etwas kleiner
+    const float Kd = 0.0;    // Dämpfung erhöhen
+    const float Ki = 0.0;    // Ki erstmal weglassen, nur wenn systematisch ein Versatz bleibt
+    const int center = 2000;
+    uint16_t position = frontSensor.readPosition();
+    Serial.println(String("Positiooooooon: ") + position);
+    int error = position - center;
+
+    integral += error;                         // summiert Fehler über Zeit
+    int derivative = error - lastError;        // wie stark sich der Fehler verändert
+    lastError = error;
+
+    float correction = Kp * error + Kd * derivative + Ki * integral;
+    correction = constrain(correction, -30, 30);  // maximale Korrektur begrenzen
+
+    float leftSpeed = baseSpeed + correction;
+    float rightSpeed = baseSpeed - correction;
+
+    motorLeft.setTargetRPM(-leftSpeed);
+    motorRight.setTargetRPM(rightSpeed);
    
     Serial.println(String("Fehler Decoder: ") + error_forward);   
     

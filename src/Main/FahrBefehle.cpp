@@ -35,7 +35,7 @@ void followLine(float baseSpeed, TOF& tof_front_lower, TOF& tof_back) {
   motorLeft.setTargetRPM(0);
   motorRight.setTargetRPM(0);
   delay(500); 
-  driveStraight1(70);
+  driveStraight(70);
   delay(500);
   return;
   }
@@ -99,7 +99,7 @@ void followLineBackwards(float baseSpeed, TOF& tof_front_lower, TOF& tof_back) {
   if(endschalter.isPressed()){
     motorLeft.setTargetRPM(0);
     motorRight.setTargetRPM(0);
-    delay(500);
+    delay(200);
     return;
   }
 
@@ -244,16 +244,19 @@ void rotateUntilLine360() {
 void ablaufHindernis(TOF& tof_front_lower, TOF& tof_back){
 
   rotateUntilLineBack();
+  delay(200);
   followLineBackwards(15, tof_front_lower, tof_back);
-  delay(500);
+  delay(200);
   myServo.liftHindernis();
-  delay(500);
+  delay(200);
   rotateUntilLineBack();//offset von 20 cm
-  delay(500);
-  driveStraight(210);
-  delay(500);
+  delay(200);
+  driveStraight1(230);
+  delay(200);
   myServo.dropHindernis();
-  delay(500);
+  delay(200);
+  driveStraight(50);
+  delay(200);
   followLine(40, tof_front_lower, tof_back);
 
 

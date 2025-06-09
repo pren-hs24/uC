@@ -120,7 +120,7 @@ void setup() {
 
 
 void loop() {
- followLine(30, tof_front_lower, tof_back);
-
+ followLine(40, tof_front_lower, tof_back);
+delay(5);
 
 }
