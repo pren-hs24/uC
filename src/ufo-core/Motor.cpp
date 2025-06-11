@@ -183,8 +183,8 @@ void Motor::updateControl() {
   direction = newDir;
   pwmDuty = constrain(absSignal, 0, 245);
 
-  Serial.printf("Current RPM: %.2f | targetRPM: %.2f | pwmDuty: %.2f | integral: %.2f\n",
-                currentRPM,targetRPM,pwmDuty, integral);
+  // Serial.printf("Current RPM: %.2f | targetRPM: %.2f | pwmDuty: %.2f | integral: %.2f\n",
+  //               currentRPM,targetRPM,pwmDuty, integral);
 
   // if(this==instance0){
   //   Serial.printf("rpm_L = %.2f\n",currentRPM);

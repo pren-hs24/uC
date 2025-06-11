@@ -43,7 +43,7 @@ void UART_Receive();
 void UART_SendEvent(EventCode eventCode, uint8_t *payload, size_t payloadLength);
 
 //Hilfsfunktion zum Versenden von Log messages
-void UART_LogMessage(const char* fmt, ...) 
+void UART_LogMessage(const char* fmt, ...);
 
 // Sendet das "Point Reached" Event
 void UART_SendPointReachedEvent();

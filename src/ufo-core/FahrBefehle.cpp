@@ -16,7 +16,7 @@ bool followLine(float baseSpeed) {
   const float Ki = 0.0;    // Ki erstmal weglassen, nur wenn systematisch ein Versatz bleibt
   const int center = 2000;
   uint16_t position = frontSensor.readPosition();
-  Serial.println(String("Positiooooooon: ") + position);
+  //Serial.println(String("Positiooooooon: ") + position);
   int error = position - center;
 
   integral += error;                         // summiert Fehler über Zeit
@@ -33,6 +33,7 @@ bool followLine(float baseSpeed) {
   motorRight.setTargetRPM(rightSpeed);
   
   if(frontSensor.onPoint()){//offset 6cm
+  Serial.println("On point aufgerufen");
   motorLeft.setTargetRPM(0);
   motorRight.setTargetRPM(0);
   delay(500); 
@@ -42,6 +43,7 @@ bool followLine(float baseSpeed) {
   }
 
   if(frontSensor.isOnLine1()){
+    Serial.println("Linie verloren");
    rotateUntilLine360(); 
   }
 
@@ -53,9 +55,10 @@ bool followLine(float baseSpeed) {
     Serial.println("Fehler oberer TOF front");
   }
 
-  Serial.println(distance_front_lower);
+  Serial.printf("Distanz zu Pylon: %i",distance_front_upper);
 
-  if(distance_front_lower < DET_DIST){
+  if(distance_front_upper < DET_DIST){
+    Serial.println("Pylon erkannt");
     motorLeft.setTargetRPM(0);
     motorRight.setTargetRPM(0);
     UART_SendEvent(EVT_NEXT_POINT_BLOCKED,nullptr,0);
@@ -65,13 +68,14 @@ bool followLine(float baseSpeed) {
   }
 
   if(distance_front_lower < 300){
-    UART_SendEVENT(EVT_OBSTACLE_DETECTED,nullptr,0);
+    UART_SendEvent(EVT_OBSTACLE_DETECTED,nullptr,0);
     motorLeft.setTargetRPM(0);
     motorRight.setTargetRPM(0);
     delay(2000);
     ablaufHindernis();
+    error = 0;
+    integral = 0;
   }
-
   return false;
 }
 
@@ -258,19 +262,19 @@ void rotateUntilLine360() {
 void ablaufHindernis(){
 
   rotateUntilLineBack();
-  followLineBackwards(15);
-  delay(500);
+  delay(200);
+  followLineBackwards(MIN_RPM);
+  delay(200);
   myServo.liftHindernis();
-  delay(500);
+  delay(200);
   rotateUntilLineBack();//offset von 20 cm
-  delay(500);
-  driveStraight(210);
-  delay(500);
+  delay(200);
+  driveStraight1(230);
+  delay(200);
   myServo.dropHindernis();
-  delay(500);
-  followLine(40);
-
-
+  delay(200);
+  driveStraight(50);
+  delay(200);
 }
 
 

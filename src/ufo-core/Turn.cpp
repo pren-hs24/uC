@@ -18,6 +18,10 @@ void Turn_UFO(float targetAngle) {
   } else if (targetAngle < 0) {
     direction = -1;
   }
+  else{
+    //winkel = 0 -> Funktion verlassen
+    return;
+  }
 
   encoderLeftStart = motorLeft.getEncoderPosition();
   encoderRightStart = motorRight.getEncoderPosition();

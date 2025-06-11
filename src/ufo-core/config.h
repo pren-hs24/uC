@@ -48,7 +48,7 @@
 #define DEFAULT_SPEED 30
 #define TURN_DIST 50
 #define PICK_DIST 20
-#define DET_DIST 3000
+#define DET_DIST 450
 
 enum Target : uint8_t {
     TARGET_A = 0,

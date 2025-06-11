@@ -19,7 +19,6 @@ int buzzer = BUZZER;
 // This code uses PROGMEM to fit the melody to flash as it was to long to fit
 // in SRAM. It may not work on other Arduino arquitectures other than AVR
 const int melody[] = {
-
   NOTE_B3, 4, NOTE_FS3, 8, NOTE_B3, 4, NOTE_D4, -3, NOTE_B3, -3,
   NOTE_D4, 4, NOTE_B3, 8, NOTE_D4, 4, NOTE_FS4, -3, NOTE_D4, -3,
   NOTE_FS4, 4, NOTE_D4, 8, NOTE_FS4, 4, NOTE_A4, -3, NOTE_A3, -3,

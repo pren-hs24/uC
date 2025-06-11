@@ -76,14 +76,15 @@ return overThreshold >= 5;  // true, wenn ALLE drüber sind
 }
 
 bool LineSensor::onPoint() {
-  
-   qtr.readCalibrated(sensorValues);
+  qtr.readCalibrated(sensorValues);
+
+  uint8_t whiteCount = 0;
 
   for (uint8_t i = 0; i < sensorCount; i++) {
-    if (sensorValues[i] > 200) {
-      return false;  // Nicht alle Sensoren sehen Weiß
+    if (sensorValues[i] < 200) {  // Sensor sieht Weiß
+      whiteCount++;
     }
   }
 
-  return true;  // Alle Sensoren sehen Weiß
+  return whiteCount >= 3;
 }
